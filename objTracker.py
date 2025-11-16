@@ -5,18 +5,11 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
-plt.rcParams.update({'font.size': 10})
 
-# SPEED LIMIT ( in px ) 
-limit = 150
-
-# SPEED RECORD
-file = open("D://SDS//TrafficRecord//SpeedRecord.txt", "w")
-file.write("------------------------------\n")
-file.write("            REPORT            \n")
-file.write("------------------------------\n")
-file.write("ID  |   SPEED\n------------------------------\n")
-file.close()
+# SPEED LIMIT ( in px/s )
+# This is an estimate in pixels per second based on the video's perspective.
+# You may need to tune this value.
+limit = 150 
 
 # CLASS & METHODS
 class EuclideanDistTracker:
@@ -91,31 +84,26 @@ class EuclideanDistTracker:
     # SPEED FUNCTION ( in px/s )
     def getsp(self, id):
         if (self.s[0, id] != 0):
+            # Speed = Distance / Time
+            # Distance is ~200 pixels in your setup (420 - 245)
             s = 200 / self.s[0, id]
         else:
             s = 0
 
         return int(s)
 
-    # SAVE VEHICLE DATA
+    # SAVE VEHICLE DATA (IN MEMORY)
     def capture(self, img, x, y, h, w, sp, id):
+        # This function no longer saves images to disk.
+        # It only saves the data to lists for the app.
         if(self.capf[id] == 0):
             self.capf[id] = 1
             self.f[id] = 0
-            crop_img = img[y-5:y + h+5, x-5:x + w+5]
-            n = "_id_" + str(id) + "_speed_" + str(sp)
-            file = 'D://SDS//TrafficRecord//' + n + '.jpg'
-            cv2.imwrite(file, crop_img)
             self.count += 1
-            fileTR = open("D://SDS//TrafficRecord//SpeedRecord.txt", "a")
+            
             if(sp > limit):
-                fileEX = 'D://SDS//TrafficRecord//exceeded//' + n + '.jpg'
-                cv2.imwrite(fileEX, crop_img)
-                fileTR.write(str(id) + " \t " + str(sp) + " <-- exceeded\n")
                 self.exceeded += 1
-            else:
-                fileTR.write(str(id) + " \t " + str(sp) + "\n")
-            fileTR.close()
+            
             self.ids_DATA.append((id))
             self.spd_DATA.append((sp))
 
@@ -127,35 +115,35 @@ class EuclideanDistTracker:
     def datavis(self, id_lst, spd_lst):
         x = id_lst
         y = spd_lst
-        valx = []
-        for i in x:
-            valx.append(str(i))
-                
-        plt.figure(figsize=(20,5))
+        valx = [str(i) for i in x]
+              
+        # --- Create Figure and Axes ---
+        # This will be returned to Streamlit
+        fig, ax = plt.subplots(figsize=(20, 5))
+        
         style.use('dark_background')
-        plt.axhline(y = limit, color = 'r', linestyle = '-', linewidth='5')
-        plt.bar(x, y, width=0.5, linewidth='3', edgecolor='yellow', color='blue', align='center')
-        plt.xlabel('ID')
-        plt.ylabel('SPEED')
-        plt.xticks(x,valx)
-        plt.legend(["speed limit"])
-        plt.title('SPEED OF VEHICLES CROSSING ROAD\n')
-        plt.savefig("D://SDS//TrafficRecord//datavis.png", bbox_inches ='tight', pad_inches =1, edgecolor ='w', orientation ='landscape')
+        
+        # --- Plot using 'ax' object ---
+        ax.axhline(y = limit, color = 'r', linestyle = '-', linewidth=5)
+        ax.bar(x, y, width=0.5, linewidth=3, edgecolor='yellow', color='blue', align='center')
+        ax.set_xlabel('ID')
+        ax.set_ylabel('SPEED (px/s)')
+        ax.set_xticks(x)
+        ax.set_xticklabels(valx)
+        ax.legend(["Speed Limit"])
+        ax.set_title('SPEED OF VEHICLES CROSSING ROAD\n')
+        
+        # --- Return the figure object ---
+        # Do NOT use plt.show() or plt.savefig()
+        return fig
 
-     
     # SPEED LIMIT
     def limit(self):
         return limit
 
-    # TEXT FILE SUMMARY
+    # end() function stub
     def end(self):
-        file = open("D://SDS//TrafficRecord//SpeedRecord.txt", "a")
-        file.write("\n------------------------------\n")
-        file.write("           SUMMARY            \n")
-        file.write("------------------------------\n")
-        file.write("Total Vehicles : " + str(self.count) + "\n")
-        file.write("Exceeded speed limit : " + str(self.exceeded) + "\n")
-        file.write("------------------------------\n")
-        file.write("             END              \n")
-        file.write("------------------------------\n")
-        file.close()
+        # This function is called by app.py, but it no longer needs
+        # to write to a text file. We leave it here as 'pass'
+        # to prevent any errors.
+        pass
